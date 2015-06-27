@@ -43,7 +43,7 @@ activities = read.table(file.path(dsdir, 'activity_labels.txt'),
 xcolnames <- c("category", "subject", "aid")
 for (xcol in select(read.table(file.path(dsdir, 'features.txt')), 2)[1])
 {
-  xcol <- gsub('[(,]', '-', gsub('[)]', '', paste(xcol)))
+  xcol <- gsub('[(,-]', '_', gsub('[)]', '', paste(xcol)))
   xcolnames <- c(xcolnames, xcol)
 }
 xselect <- c(1, 2, 3, grep('[Mm]ean|std', xcolnames))
@@ -74,5 +74,16 @@ write.table(merge(xdata, activities, by=c("aid")), "tidy-data.csv")
 
 #' 5. - Generate second, independent tidy data set with the average of
 #'      each variable for each activity and each subject.
-xd2 <- group_by(xdata, subject, activity)
-
+xdata <- group_by(xdata, aid, subject)
+xcolnames <- colnames(xdata)
+xd5 <- NA
+for (xvar in xcolnames[4:length(xcolnames)]) {
+  message(sprintf('Summarizing "%s"...', xvar))
+  xd <- summarize_(xdata, interp("mean(xvar)", xvar=as.name(xvar)))
+  if (is.na(xd5)) {
+    xd5 <- xd
+  } else {
+    xd5 <- cbind(xd5, xd[,3])
+  }
+}
+write.table(xd5, "tidy-data-set-5.csv")
